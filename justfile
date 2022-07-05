@@ -4,6 +4,8 @@
 set dotenv-load
 
 VERSION := "latest"
+CONTAINER_BUILDER := "docker"
+CONTAINER_NAME := "ipmonitor-dev"
 export GH_TOKEN := ""
 export GH_REPO := env_var_or_default("GH_REPO", "DarkOnion0/TelizeBulkRequest")
 
@@ -14,6 +16,10 @@ default:
 # Build app for all plateform
 build: install
     ./build.sh {{VERSION}}
+
+# Build app's container image
+build_container:
+    {{CONTAINER_BUILDER}} build . -t {{CONTAINER_NAME}}
 
 # Clean the remote GHCR container registry
 cleanc:
@@ -57,10 +63,14 @@ release_full $UNSTABLE="stable": build
 release_ci: build
     gh release upload {{VERSION}} ./bin/*.zip
 
-# The command to run to dev ADZTBotV2
+# App dev command, binary mode
 dev: format lint
     @echo -e "\nRun TelizeBulkRequest"
     go run main.go -debug true
+
+# App dev command, container mode
+dev_container: build_container
+    {{CONTAINER_BUILDER}} run -e DEBUG="true" {{CONTAINER_NAME}}:latest
 
 # Run the prerequisites to install all the missing deps that nix can't cover
 install:
