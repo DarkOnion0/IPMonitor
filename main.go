@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -87,11 +87,13 @@ func ipChecker() {
 		funcLog.Info().
 			Str("currentIP", currentIP).
 			Str("previousIP", previousIP).
+			Bool("ipChanged", false).
 			Msg("The ip has not changed since the last check: function finished successfully")
 	case "":
 		funcLog.Info().
 			Str("currentIP", currentIP).
 			Str("previousIP", previousIP).
+			Bool("ipChanged", false).
 			Msg("This is the first run of the function, previousIP is not set: function finished successfully")
 		previousIP = currentIP
 		currentIP = ""
@@ -100,6 +102,7 @@ func ipChecker() {
 		funcLog.Warn().
 			Str("currentIP", currentIP).
 			Str("previousIP", previousIP).
+			Bool("ipChanged", true).
 			Msg("The ip has changed since last check: function finished successfully")
 
 		previousIP = currentIP
@@ -135,7 +138,10 @@ func main() {
 
 	ipChecker()
 
-	fmt.Scanln()
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+	<-stop
+
 	funcLog.Info().
 		Msg("Closing the app")
 }
