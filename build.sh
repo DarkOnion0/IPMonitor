@@ -9,7 +9,7 @@ bold=$(tput bold)
 red="\033[0;31m"
 stop_color='\033[0m'
 
-binaryName="ipchecker"
+binaryName="ipmonitor"
 
 ##########################################
 ## Set the execution mode of the script ##
