@@ -45,6 +45,13 @@ func init() {
 		Msg("Debug mode is enabled!")
 }
 
+func init() {
+	log.Debug().
+		Str("Debug", *config.Debug).
+		Str("Cron", *config.Cron).
+		Msg("Printing the default settings")
+}
+
 // This function check if the public server IP has changed since the last lookup and return a warn log if it's the case
 func ipChecker() {
 	funcLog := log.With().
