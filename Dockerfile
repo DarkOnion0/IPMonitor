@@ -18,7 +18,12 @@ WORKDIR /src/app
 COPY --from=builder /src/app/IPChecker /src/app/
 
 # Env variables
-ENV DEBUG false
-ENV CRON "*/15 * * * *"
+ENV DEBUG "false"
 
-CMD ["sh", "-c", "./IPChecker -debug $DEBUG -cron $CRON"]
+ENV MINUTES "*/10"
+ENV HOURS "*"
+ENV MONTH_DAY "*"
+ENV MONTH "*"
+ENV WEEK_DAY "*"
+
+CMD ./IPChecker -debug $DEBUG -cron "$MINUTES $HOURS $MONTH_DAY $MONTH $WEEK_DAY"
