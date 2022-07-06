@@ -28,6 +28,7 @@ pkgs.mkShell {
       pkgs.curl
       pkgs.jq
       pkgs.gh
+      pkgs.git-cliff
 
       # Command runner
       pkgs.just
