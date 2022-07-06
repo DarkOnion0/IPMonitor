@@ -53,7 +53,7 @@ check: install format lint
     go mod tidy
 
 # Build & release app, it needs GH_TOKEN to be overwritten and UNSTABLE set to unstable to publish a pre-release
-release_full $UNSTABLE="stable": build
+release_full $UNSTABLE="stable": build generate_changelog
     #!/usr/bin/env bash
     if [ "${UNSTABLE}" = "unstable" ]; then
         gh release create --generate-notes --prerelease {{VERSION}} ./bin/*.zip
@@ -64,6 +64,11 @@ release_full $UNSTABLE="stable": build
 # Upload the release binary to an existing release, it needs GH_TOKEN to be overwritten
 release_ci: build
     gh release upload {{VERSION}} ./bin/*.zip
+
+# Generate the changelog
+generate_changelog:
+    @echo -e "\nGenerate the changelog with git-cliff"
+    git-cliff --date-order --output CHANGELOG.md
 
 # App dev command, binary mode
 dev: check
