@@ -15,10 +15,12 @@ default:
 
 # Build app for all plateform
 build: install
+    @echo -e "\nBuild the app binary for Linux, Mac and Windows"
     ./build.sh {{VERSION}}
 
 # Build app's container image
-build_container:
+build_container: format lint
+    @echo -e "\nBuild the app container for a single arch"
     {{CONTAINER_BUILDER}} build . -t {{CONTAINER_NAME}}
 
 # Clean the remote GHCR container registry
@@ -64,14 +66,16 @@ release_ci: build
     gh release upload {{VERSION}} ./bin/*.zip
 
 # App dev command, binary mode
-dev: format lint
-    @echo -e "\nRun TelizeBulkRequest"
-    go run main.go -debug true
+dev: check
+    @echo -e "\nRun IPMonitor in dev mode (binary)"
+    go run main.go -debug true -cron "*/1 * * * *"
 
 # App dev command, container mode
 dev_container: build_container
-    {{CONTAINER_BUILDER}} run -e DEBUG="true" {{CONTAINER_NAME}}:latest
+    @echo -e "\nRun IPMonitor in dev mode (container)"
+    {{CONTAINER_BUILDER}} run -e DEBUG="true" -e CRON="*/1 * * * *" -p 8080:8080 {{CONTAINER_NAME}}:latest
 
 # Run the prerequisites to install all the missing deps that nix can't cover
 install:
+    @echo -e "\nInstall the go prerequisites"
     go mod download
