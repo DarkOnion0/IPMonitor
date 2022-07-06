@@ -7,7 +7,7 @@ VERSION := "latest"
 CONTAINER_BUILDER := "docker"
 CONTAINER_NAME := "ipmonitor-dev"
 export GH_TOKEN := ""
-export GH_REPO := env_var_or_default("GH_REPO", "DarkOnion0/TelizeBulkRequest")
+export GH_REPO := env_var_or_default("GH_REPO", "DarkOnion0/IPMonitor")
 
 #Change the default just behaviour
 default:
