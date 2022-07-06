@@ -20,7 +20,9 @@ IPMonitor is a little app that warn you when your public IP changed (the IP of t
     Docker (recommended)
   </summary>
   <p>
+  
   > **⚠️ The `latest` tag follow the master branch so it may be unstable or just not-working, USE IT AT YOUR OWN RISKS ⚠️**
+  
   1. Download the container from GitHub
   2. Run it, further configuration can be done, see the corresponding sections bellow.
 
