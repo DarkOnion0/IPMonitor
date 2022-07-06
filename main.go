@@ -1,11 +1,14 @@
 package main
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"os"
 	"os/signal"
 	"strings"
+
+	"github.com/gofiber/fiber/v2"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -19,6 +22,13 @@ var (
 	currentIP  string
 	previousIP string
 )
+
+// This is the response type for every request sent to the / endpoint when the API is enabled
+type JSONRespT struct {
+	CurrentIP  string
+	PreviousIP string
+	IpChanged  bool
+}
 
 func init() {
 	// enable or not the debug level (default is Info)
@@ -49,17 +59,19 @@ func init() {
 	log.Debug().
 		Str("Debug", *config.Debug).
 		Str("Cron", *config.Cron).
+		Str("EnableCron", *config.EnableCron).
+		Str("APIPort", *config.APIPort).
+		Str("EnableAPI", *config.EnableAPI).
 		Msg("Printing the default settings")
 }
 
 // This function check if the public server IP has changed since the last lookup and return a warn log if it's the case
-func ipChecker() {
+func ipChecker() (err error, ipChanged bool) {
 	funcLog := log.With().
 		Str("function", "IpChecker").
 		Logger()
 
-	funcLog.
-		Info().
+	funcLog.Debug().
 		Msg("Start the function")
 
 	funcLog.Debug().
@@ -70,7 +82,7 @@ func ipChecker() {
 		funcLog.Error().
 			Err(err1).
 			Msg("Something bad append while getting the server if from Cloudlfare server, is your internet down ?")
-		return
+		return errors.New("Something bad append while getting the server if from Cloudlfare server"), ipChanged
 	}
 
 	defer resp.Body.Close()
@@ -84,7 +96,7 @@ func ipChecker() {
 			Err(err2).
 			Msg("Something bad append while reading the response body")
 
-		return
+		return errors.New("Something bad append while reading the response body"), ipChanged
 	}
 
 	currentIP = strings.Split(strings.Split(string(requestBody), "\n")[2], "=")[1]
@@ -96,6 +108,8 @@ func ipChecker() {
 			Str("previousIP", previousIP).
 			Bool("ipChanged", false).
 			Msg("The ip has not changed since the last check: function finished successfully")
+
+		return err, false
 	case "":
 		funcLog.Info().
 			Str("currentIP", currentIP).
@@ -104,6 +118,8 @@ func ipChecker() {
 			Msg("This is the first run of the function, previousIP is not set: function finished successfully")
 		previousIP = currentIP
 		currentIP = ""
+
+		return err, false
 
 	default:
 		funcLog.Warn().
@@ -114,6 +130,8 @@ func ipChecker() {
 
 		previousIP = currentIP
 		currentIP = ""
+
+		return err, true
 	}
 }
 
@@ -122,28 +140,92 @@ func main() {
 		Str("function", "Main").
 		Logger()
 
-	funcLog.
-		Info().
-		Msg("Start the function")
+	funcLog.Info().
+		Msg("Start the app")
 
-	c := cron.New()
+	if *config.EnableCron == "true" {
+		c := cron.New()
 
-	// set a cron job to update the user ranking every night at 23:59
-	// nolint
-	c.AddFunc(*config.Cron, ipChecker)
+		// set a cron job to check the public IP every 10 minutes
+		// nolint
+		c.AddFunc(*config.Cron, func() {
+			err, _ := ipChecker()
 
-	// start all the cron jobs
-	funcLog.Debug().
-		Msg("Start the cron jobs")
-	c.Start()
+			if err != nil {
+				funcLog.Error().
+					Str("type", "cron").
+					Err(err).
+					Msg("Something bad append while running the ipChecker function")
+			}
+		})
 
-	defer func(c *cron.Cron) {
+		// start all the cron jobs
 		funcLog.Debug().
-			Msg("Closing cron jobs")
-		c.Stop()
-	}(c)
+			Str("type", "cron").
+			Msg("Start the cron jobs")
+		c.Start()
 
-	ipChecker()
+		defer func(c *cron.Cron) {
+			funcLog.Debug().
+				Str("type", "cron").
+				Msg("Closing cron jobs")
+			c.Stop()
+		}(c)
+	}
+
+	if *config.EnableAPI == "true" {
+		app := fiber.New()
+
+		app.Get("/", func(c *fiber.Ctx) error {
+			funcLog.Debug().
+				Str("type", "API").
+				Str("endpoint", "/").
+				Msg("Endpoint has been triggered")
+			err, ipChanged := ipChecker()
+
+			if err != nil {
+				funcLog.Error().
+					Str("type", "API").
+					Err(err).
+					Msg("Something bad append while running the ipChecker function")
+
+				return err
+			}
+
+			resp := JSONRespT{
+				CurrentIP:  currentIP,
+				PreviousIP: previousIP,
+				IpChanged:  ipChanged,
+			}
+
+			return c.JSON(resp)
+		})
+
+		funcLog.Debug().
+			Str("type", "API").
+			Msg("Starting fiber API server")
+
+		err := app.Listen(":" + *config.APIPort)
+
+		if err != nil {
+			funcLog.Error().
+				Str("type", "API").
+				Err(err).
+				Msg("Something bad append while starting the fiber API")
+
+			return
+		}
+	}
+
+	err, _ := ipChecker()
+
+	if err != nil {
+		funcLog.Error().
+			Err(err).
+			Msg("Something bad append while running the ipChecker function")
+
+		return
+	}
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
