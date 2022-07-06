@@ -19,6 +19,8 @@ COPY --from=builder /src/app/IPChecker /src/app/
 
 # Env variables
 ENV DEBUG "false"
+ENV CRON_ENABLE true
+ENV API_ENABLE true
 
 ENV MINUTES "*/10"
 ENV HOURS "*"
@@ -26,4 +28,6 @@ ENV MONTH_DAY "*"
 ENV MONTH "*"
 ENV WEEK_DAY "*"
 
-CMD ./IPChecker -debug $DEBUG -cron "$MINUTES $HOURS $MONTH_DAY $MONTH $WEEK_DAY"
+EXPOSE 8080/tcp
+
+CMD ./IPChecker -debug $DEBUG -cron "$MINUTES $HOURS $MONTH_DAY $MONTH $WEEK_DAY" -cron-enable $CRON_ENABLE -api-enable $API_ENABLE
