@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ipmonitor
+spec:
+  selector:
+    matchLabels:
+      app: ipmonitor
+  template:
+    metadata:
+      labels:
+        app: ipmonitor
+    spec:
+      containers:
+        - name: ipmonitor
+          image: ghcr.io/darkonion0/ipmonitor:latest
+          env:
+            - name: API_ENABLE
+              value: "false"
