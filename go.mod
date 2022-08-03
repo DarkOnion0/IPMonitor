@@ -3,7 +3,7 @@ module github.com/DarkOnion0/IpMonitor
 go 1.17
 
 require (
-	github.com/gofiber/fiber/v2 v2.35.0
+	github.com/gofiber/fiber/v2 v2.36.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/zerolog v1.27.0
 )
